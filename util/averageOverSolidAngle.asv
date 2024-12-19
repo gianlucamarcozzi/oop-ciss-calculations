@@ -1,0 +1,19 @@
+function outV = averageOverSolidAngle(inV, nTheta, nPhi, dim)
+
+[thetas, ~] = createthetaphigrid(nTheta, nPhi);
+
+if numel(dim) == 1
+    thetas = repmat(thetas, [nPhi, 1]);
+    weight = sin(thetas)/sum(thetas);
+    size(weight)
+    outV = sum(weight.*inV, dim);
+    outV = squeeze(outV);
+else
+    weight = sin(thetas)/sum(sin(thetas)*ones(1, nPhi), 'all');
+
+    weight = reshape(weight, [ones(1, dim(1) - 1), nTheta]);
+    outV = sum(weight.*inV, dim);
+    outV = squeeze(outV);
+end
+end
+
