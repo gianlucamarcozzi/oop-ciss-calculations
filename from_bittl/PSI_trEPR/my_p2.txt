@@ -1,0 +1,42 @@
+9600.                MIKROWELLEN-FREQUENZ
+3400. 3440. 301      MAGNETFELD
+20 10                   GENAUIGKEIT
+2.0030 0.00000 0.00000
+0.00000 2.0026 0.00000
+0.00000 0.00000 2.0023 G-TENSOR P700+
+3.5                    LINIENBREITE P
+2.00620 0.00000 0.00000
+0.00000 2.0051 0.00000
+0.00000 0.00000 2.00220 G-TENSOR Qb-
+3.5                     LINIENBREITE Q
+Q                       REFERENZSYSTEM
+0.0  90.0    		PHI,THETA
+83.0 128.0 10.0   	ALPHA,BETA,GAMMA
++0.01 -1.7            J,D
+Y                       ORIENTIERUNGSSPEKTREN?
+Y                       PULVERSPEKTRUM?
+N                       ESEEM_FT?
+test2                   OUTPUT_FILENAME
+31.25 512                MAX.ESEEM-FT-FREQUENZ,FREQ-PUNKTE
+256                      HYPERFEIN_SCHRITTE
+0.                     LORENTZ_BREITE(MHz)
+3                       ANZAHL_DER_PROTONEN_AM_A1-
+10.25 1.472  0.000
+1.472 11.95  0.000
+0.000  0.000 9.000
+0                       ANZAHL_DER_PROTONEN_AM_P+
+ 0.  0.0  0.0
+ 0.0  0.  0.0
+ 0.0  0.0  0.
+
+-10.25 -1.472  0.000
+-1.472 -11.95  0.000
+0.000  0.000 -9.000
+
+-4.5  0.0  0.0      
+ 0.0 -4.0  0.0      
+ 0.0  0.0 -3.5       
+
+ HFC Tensor A1- (9.4,12.8,9.0) 30 grd gedreht.
+ 3436. 3476. 501      MAGNETFELD
+

@@ -1,7 +1,7 @@
-function intensityResonance = intensityresonance(rhoInit, nVers, deltaw, J, d, itrans)
+function intensityResonance = intensityresonance(rhoInit, rVers, deltaw, J, d, itrans)
     
     % Rotate rhoInit depending on theta, phi
-    rho0 = rotatezfirstysecond(rhoInit, nVers);
+    rho0 = rotatezfirstysecond(rhoInit, rVers);
 
     % rho should be in the product basis
     rho1 = rotateproduct2coupled(rho0);
@@ -22,7 +22,7 @@ function intensityResonance = intensityresonance(rhoInit, nVers, deltaw, J, d, i
                 populs(1, :) - populs(3, :); ...
                 populs(2, :) - populs(4, :)];
     
-    if abs(nVers(3)) < 0.1 && itrans == 1
+    if abs(rVers(3)) < 0.1 && itrans == 1
 %         nVers
 %         rho0
 %         rho1
@@ -32,13 +32,16 @@ function intensityResonance = intensityresonance(rhoInit, nVers, deltaw, J, d, i
     intensityResonance = -populDiff(itrans, :).*transProb(itrans, :);
 end
 
-function rho = rotatezfirstysecond(rhoInit, nVers)
+function rho = rotatezfirstysecond(rhoInit, rVers)
     
-    theta = atan(hypot(nVers(1), nVers(2))/nVers(3));
-    phi = atan(nVers(2)/nVers(1));
+    theta = atan(hypot(rVers(1), rVers(2))/rVers(3));
+    if rVers(1) ~= 0 || rVers(2) ~= 0
+        phi = atan(rVers(2)/rVers(1));
+    else
+        phi = 0;  % This prevents phi = atan(0/0) = NaN
+    end
     
-    szapszb = 1/2*diag([1, 0, 0, -1]);
-    
+    szapszb = 1/2*diag([1, 0, 0, -1]);    
     %%%%%%%%%%%%%%%%%%%%%%%%%%
     % syapsyb = 
     %   0   -i/2    -i/2    0
@@ -58,8 +61,8 @@ function rho = rotatezfirstysecond(rhoInit, nVers)
     roty = expm(1i*syapsyb*(-theta)); % Rot 2: around y of minus theta
     rotyT = expm(-1i*syapsyb*(-theta));
     
-    rho = rotzT*rhoInit*rotz;
-    rho = rotyT*rho*roty;
+    rho = rotyT*rhoInit*roty;
+    rho = rotzT*rho*rotz;
 
 end
 

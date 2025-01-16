@@ -33,10 +33,10 @@ Sys.AFrame = [0 0 0 60 -90 0]*pi/180;
 Sys.AFrame = repmat(Sys.AFrame, [nNuc, 1]);
 
 % gPlus = (Sys.g(1) + Sys.g(2))/2;
-mwFreq = 9.7;
+mwFreq = 9.6;
 % B0 = planck/bmagn/gfree*mwFreq*1e12;  % mT
 % xxSim = linspace(mwFreq - 100e-3, mwFreq + 100e-3, 1024);  % GHz
-xxSim1 = linspace(344.5, 347, 1024);  % mT
+xxSim1 = linspace(339.5, 344.5, 301);  % mT
 
 % Frequency sweep
 % Exp.mwCenterSweep = [mean(xxSim), max(xxSim) - min(xxSim)];
@@ -108,11 +108,11 @@ tic
 dip = -mt2mhz(0.170);
 JJ = mt2mhz(0.001);
 nHfiLine = nNuc + 1;
-trlwpp = 0.02;  % mT
+trlwpp = 0.35;  % mT
 
 % Theta, phi grid
-nTheta = 91;
-nPhi = 91;
+nTheta = 20;
+nPhi = 20;
 thetas = linspace(0, 180, nTheta)*pi/180;
 thetas = thetas';
 phis = linspace(0, 180, nPhi)*pi/180;

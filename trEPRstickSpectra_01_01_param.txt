@@ -1,0 +1,26 @@
+S = [1/2 1/2];
+g = [2.0030 2.0026 2.0023; ... % P700+
+         2.0062 2.0051 2.0022];    % A1-
+gFrame = [-10 -128 -83; ...
+                0    0   0]*pi/180;
+eeFrame = [0 90 0]*pi/180;  % zD direction is along -x of A1-
+
+nNuc = 0;
+Nucs = '1H';
+A = [0, 0, 0, 9, 9.4, 12.8];
+AFrame = [0 0 0 60 -90 0]*pi/180;
+
+J = mt2mhz(0.001);  % MHz
+dip = -mt2mhz(0.170); % MHz
+
+lwpp = 0.35;  % mT
+initState = 'singlet';
+
+mwFreq = 9.6;
+CenterSweep = [342, 4]; % mT
+nPoints = 301;
+Harmonic = 0;
+
+nTheta = 40;
+nPhi = 40;
+

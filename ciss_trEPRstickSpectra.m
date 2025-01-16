@@ -15,22 +15,22 @@ Sys.gFrame = Sys0.gFrame;
 Sys.dip = mt2mhz(-0.170);  % MHz
 Sys.J = mt2mhz(1e-3);  % MHz
 Sys.eeFrame = Sys0.eeFrame;
-Sys.nNuc = 3;
+Sys.nNuc = 0;
 Sys.A = [0, 0, 0, 9, 9.4, 12.8];  % MHz
 Sys.AFrame = [0 0 0 60 -90 0]*pi/180;
 Sys.trlwpp = 0.35;
 
 Sys.rho = zeros(4, 4);
 % Up-down and down-up
-Sys.rho(2, 2) = 1;
-Sys.rho(3, 3) = 1;
-Sys.rho = 1/2*Sys.rho;
-% Singlet
 % Sys.rho(2, 2) = 1;
-% Sys.rho(2, 3) = -1;
-% Sys.rho(3, 2) = -1;
 % Sys.rho(3, 3) = 1;
 % Sys.rho = 1/2*Sys.rho;
+% Singlet
+Sys.rho(2, 2) = 1;
+Sys.rho(2, 3) = -1;
+Sys.rho(3, 2) = -1;
+Sys.rho(3, 3) = 1;
+Sys.rho = 1/2*Sys.rho;
 
 Sys.mwFreq = 9.6;
 Sys.x = linspace(340.5, 344, 301);  % mT
@@ -42,11 +42,11 @@ Sys.nPhi = 20;
 test = treprstickspectrum(Sys);
 aa0 = averageoversolidangle(test, Sys.nTheta, Sys.nPhi, 2);
 aa0 = real(aa0);
-figure()
+% figure()
 clf
 hold on
 box on
-plot(Sys.x, aa0/max(abs(aa0)))
+plot(Sys.x, aa0)
 
 %%
 function signal = treprstickspectrum(Sys)
