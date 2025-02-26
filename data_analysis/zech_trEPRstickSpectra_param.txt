@@ -24,4 +24,3 @@ Harmonic = 0;
 nTheta = 40;
 nPhi = 40;
 
-theta = 

@@ -1,13 +1,20 @@
-function intensityResonance = intensityresonance(rhoInit, rVers, deltaw, J, d, itrans)
+function intensityResonance = intensityresonance(rhoInit, rVers, deltaw, J, d)
     
     % Rotate rhoInit depending on theta, phi
     rho0 = rotatezfirstysecond(rhoInit, rVers);
-
+    % if false
+    %     fprintf(logID, "RHO AFTER ROTATION:\n" + ...
+    %         "%f\t%f\t%f\t%f\n" + "%f\t%f\t%f\t%f\n" + ...
+    %         "%f\t%f\t%f\t%f\n" + "%f\t%f\t%f\t%f\n\n", rho0);
+    % end
+    
     % rho should be in the product basis
     rho1 = rotateproduct2coupled(rho0);
     % rho0 = rhoInit;
     
     alpha = 1/2*atan(deltaw./(J + d/2));
+    szalpha = size(alpha);
+    alpha = reshape(alpha, [1, numel(alpha)]);
     
     transProb = [sin(alpha).^2/2; ...    % 1 to 2
                 cos(alpha).^2/2; ...    ss % 3 to 4
@@ -16,20 +23,23 @@ function intensityResonance = intensityresonance(rhoInit, rVers, deltaw, J, d, i
 
     UMatrix = diagonalizingmatrix(alpha);
     rho = pagemtimes(UMatrix, pagemtimes(rho1, pagetranspose(UMatrix)));
+    % disp(size(rho))
     populs = mydiag3d(rho);
     populDiff = [populs(1, :) - populs(2, :); ...
                 populs(3, :) - populs(4, :); ...
                 populs(1, :) - populs(3, :); ...
                 populs(2, :) - populs(4, :)];
+    % disp(size(populDiff))
     
-    if abs(rVers(3)) < 0.1 && itrans == 1
+    if abs(rVers(3)) < 0.1
 %         nVers
 %         rho0
 %         rho1
 %         trace(rho(:, :, 1))
 %         populDiff(:, 1)
     end
-    intensityResonance = -populDiff(itrans, :).*transProb(itrans, :);
+    intensityResonance = -populDiff.*transProb;
+    intensityResonance = reshape(intensityResonance, [4, szalpha]);
 end
 
 function rho = rotatezfirstysecond(rhoInit, rVers)
@@ -61,6 +71,14 @@ function rho = rotatezfirstysecond(rhoInit, rVers)
     roty = expm(1i*syapsyb*(-theta)); % Rot 2: around y of minus theta
     rotyT = expm(-1i*syapsyb*(-theta));
     
+    if false
+        fprintf(logID, "ROTATION MATRIX Ry(-th):\n" + ...
+            "%f\t%f\t%f\t%f\n" + "%f\t%f\t%f\t%f\n" + ...
+            "%f\t%f\t%f\t%f\n" + "%f\t%f\t%f\t%f\n\n", roty);
+        fprintf(logID, "ROTATION MATRIX Rz(-ph):\n" + ...
+            "%f\t%f\t%f\t%f\n" + "%f\t%f\t%f\t%f\n" + ...
+            "%f\t%f\t%f\t%f\n" + "%f\t%f\t%f\t%f\n\n", rotz);
+    end
     rho = rotyT*rhoInit*roty;
     rho = rotzT*rho*rotz;
 

@@ -16,12 +16,15 @@ dip = -mt2mhz(0.170); % MHz
 lwpp = 0.35;  % mT
 initState = 'singlet';
 
+lw1 = 0.20;
+lw2 = 0.20;
+trlwpp = 0.05;
+
 mwFreq = 9.6;
 CenterSweep = [342, 4]; % mT
 nPoints = 301;
 Harmonic = 0;
 
-nTheta = 40;
-nPhi = 40;
+nTheta = 20;
+nPhi = 10;
 
-theta = 

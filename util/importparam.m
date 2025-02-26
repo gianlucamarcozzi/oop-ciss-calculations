@@ -21,7 +21,7 @@ end
 M = readlines(pathToParam);
 
 sysPar = ["S", "g", "gFrame", "eeFrame", "A", "AFrame", "Nucs", "nNuc", ...
-    "J", "dip", "lwpp", "initState"];
+    "J", "dip", "lwpp", "initState", "lw1", "lw2", "trlwpp"];
 expPar = ["x", "mwFreq", "CenterSweep", "Range", "nPoints", "Harmonic", ...
     "nTheta", "nPhi"];
 
@@ -103,6 +103,10 @@ function Sys = getrhofrominitstate(Sys)
         Sys.rho(2, 2) = 1;
         Sys.rho(3, 3) = 1;
         Sys.rho = 1/2*Sys.rho;
+    elseif strcmp(initState, 'ud')
+        Sys.rho(2, 2) = 1;
+    else
+        error("initState not implemented.")
     end
 
 end

@@ -13,14 +13,18 @@ AFrame = [0 0 0 60 -90 0]*pi/180;
 J = mt2mhz(0.00);  % MHz
 dip = -mt2mhz(0.124); % MHz
 
-lwpp = 0.315;  % mT
-initState = 'ciss';
+lwpp = 0.33;  % mT
+initState = 'du';
+
+lw1 = 0.15;
+lw2 = 0.15;
+trlwpp = 0.05;
 
 mwFreq = 9.6;
 CenterSweep = [342, 4]; % mT
 nPoints = 301;
 Harmonic = 0;
 
-nTheta = 1;
-nPhi = 1;
+nTheta = 20;
+nPhi = 10;
 

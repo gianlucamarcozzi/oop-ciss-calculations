@@ -3,7 +3,6 @@ clearvars
 addpath(genpath('S:\soft\matlab\'))
 addpath(genpath('/net/storage/gianlum33/soft/matlab/'))
 
-
 %% Easyspin simulation
 
 tic
@@ -116,8 +115,8 @@ nHfiLine = nNuc + 1;
 trlwpp = 0.41;  % mT
 
 % Theta, phi grid
-nTheta = 1;
-nPhi = 1;
+nTheta = 91;
+nPhi = 91;
 thetas = linspace(0, 180, nTheta + 2)*pi/180;
 thetas = thetas(2:end - 1);
 thetas = thetas';
@@ -215,8 +214,8 @@ toc
 nlw = 30;
 lwArray = linspace(0.25, 0.75, nlw);
 % itrlw = 1;
-for ilw1 = 1%:nlw%:nlw
-for ilw2 = 1%:nlw%:nlw
+for ilw1 = 15%:nlw%:nlw
+for ilw2 = 15%:nlw%:nlw
 tic
 % lw1 = mt2mhz(lwArray(ilw1));  % MHz
 % lw2 = mt2mhz(lwArray(ilw2));  % MHz

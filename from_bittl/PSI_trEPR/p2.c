@@ -24,7 +24,7 @@ int ReadInput()
    short   i, k;
    FILE       *fp, *fopen();
 
-   if ((fp = fopen("p2.txt","r")) == NULL) {
+   if ((fp = fopen("my_p2.txt","r")) == NULL) {
       printf("file p2.txt cannot be opened");
       return(-1);
    }
