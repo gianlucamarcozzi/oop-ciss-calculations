@@ -1,113 +1,121 @@
 function [signal, thetas, phis] = mytrepr(Sys, Exp)
 
     dip = Sys.dip;
-    lwpp = Sys.lwpp;
-
-    if ~isfield(Sys, 'nNuc')
-        Sys.nNuc = 0;
+    if ~isfield(Sys, 'nNucs')
+        Sys.nNucs = 0;
+    end
+    if ~isfield(Exp, 'gInhBroadening')
+        Exp.gInhBroadening = 0;
     end
 
-    nTheta = Exp.nTheta;
-    nPhi = Exp.nPhi;
-    Exp.nSolidAngle = nTheta*nPhi;
+    nThetas = Exp.nThetas;
+    nPhis = Exp.nPhis;
+    Exp.nSolidAngles = nThetas*nPhis;
 
     % Grid
-    [thetas, phis] = createthetaphigrid(nTheta, nPhi, Exp.gridType);
+    [thetas, phis] = createthetaphigrid(nThetas, nPhis, Exp.gridType);
 
     % Direction of B0
-    rVers = ang2vec(ones(nTheta, 1)*phis, thetas*ones(1, nPhi));
+    rVers = ang2vec(ones(nThetas, 1)*phis, thetas*ones(1, nPhis));
     % Effective g-values
     g1Tensor = rotatematrixeuangles(diag(Sys.g(1, :)), Sys.gFrame(1, :));
-    g1 = sqrt( sum( (g1Tensor*rVers).^2, 1));
+    g1s = sqrt( sum( (g1Tensor*rVers).^2, 1));
     g2Tensor = rotatematrixeuangles(diag(Sys.g(2, :)), Sys.gFrame(2, :));    
-    g2 = sqrt( sum( (g2Tensor*rVers).^2, 1));
+    g2s = sqrt( sum( (g2Tensor*rVers).^2, 1));
     % Dipolar interaction
     zD = erot(Sys.eeFrame)*[0, 0, 1]';
-    dd = dipinteraction(dip, rVers, zD);
+    dipolars = dipinteraction(dip, rVers, zD);
 
-    % Hyperfine
-    if Sys.nNuc > 0
-        [APlus, AMinus] = calculateaplusaminusnohfi(...
-            Sys.A, Sys.AFrame, rVers);
+    % Hyperfine: A plus (Apl) array (Apls) and A minus (Amin) array (Amins) 
+    if Sys.nNucs > 0
+        [Apls, Amins] = calculateApllusAmininusnohfi(...
+            Sys.A, Sys.AFrAmine, rVers);
     else
-        APlus = zeros(Exp.nSolidAngle, 1);
-        AMinus = zeros(Exp.nSolidAngle, 1);
+        Apls = zeros(Exp.nSolidAngles, 1);
+        Amins = zeros(Exp.nSolidAngles, 1);
     end
 
     Exp.rVers = rVers;
-    Sys.g1 = g1;
-    Sys.g2 = g2;
-    Sys.dd = dd;
-    Sys.APlus = APlus;
-    Sys.AMinus = AMinus;
+    Sys.g1s = g1s;
+    Sys.g2s = g2s;
+    Sys.dipolars = dipolars;
+    Sys.zD = zD;
+    Sys.Apls = Apls;
+    Sys.Amins = Amins;
     
-    if isfield(Exp, "gInhBroadening") && Exp.gInhBroadening
-        signal = signaltreprginhbroadening(Sys, Exp);
-    else
-        signal = signaltrepr(Sys, Exp);
-    end
+    signal = signaltreprginhbroadening(Sys, Exp);
 end
 
 %% SIGNALTREPR
 function signal = signaltrepr(Sys, Exp)
-    
-    g1 = Sys.g1;
-    g2 = Sys.g2;
-    nNuc = Sys.nNuc;
-    nHfiLine = nNuc + 1;
-    APlus = Sys.APlus;
-    AMinus = Sys.AMinus;
-    dd = Sys.dd;
+    %% Variables
+    g1s = Sys.g1s;
+    g2s = Sys.g2s;
+    nNucs = Sys.nNucs;
+    nHfiLines = nNucs + 1;
+    Apls = Sys.Apls;
+    Amins = Sys.Amins;
+    dipolars = Sys.dipolars;
     JJ = Sys.J;
     lwpp = Sys.lwpp;
+    resonLwpp = mt2mhz(lwpp)*1e-3;
     rhoInit = Sys.rho;
     
     fieldAxis = Exp.x;
-    nField = Exp.nPoints;
-    nSolidAngle = Exp.nSolidAngle;
+    nFields = Exp.nPoints;
+    nSolidAngles = Exp.nSolidAngles;
     rVers = Exp.rVers;
     mwFreq = Exp.mwFreq;
 
-    quantNumNuc = -nNuc/2:1:nNuc/2;
-    % Determine Pascal factor of hfi lines
-    if nNuc > 0
-        pascalMatrix = pascal(nHfiLine);
+    quantNumNucs = -nNucs/2:1:nNucs/2;
+
+    %% Determine Pascal factor of hfi lines
+    if nNucs > 0
+        pascalMatrix = pascal(nHfiLines);
         % Antidiag
-        pascalFactor = pascalMatrix(nHfiLine:nHfiLine - 1:end - 1);
-        pascalFactor = pascalFactor'/sum(pascalFactor);
+        pascs = pascalMatrix(nHfiLines:nHfiLines - 1:end - 1);
+        pascs = pascs'/sum(pascs);
     else
-        pascalFactor = 1;
+        pascs = 1;
     end
-    
-    signal = zeros(nField, nSolidAngle, 4);
-    for ii = 1:nSolidAngle
-        % disp(floor(ii/nSolidAngle*100))
-        gPlus = 1/2*(g1(ii) + g2(ii));
-        gMinus = 1/2*(g1(ii) - g2(ii));
 
-        w0 = gvalue2freq(fieldAxis, gPlus);
-        deltaw = gvalue2freq(fieldAxis, gMinus);
+    %% Spectrum
+    % The general convention of dimensions for matrices: the indeces are
+    % (iSolidAngle, iField, itrans)
+    signal = zeros(nSolidAngles, nFields, 4);
+    for ii = 1:nSolidAngles
+        % disp(floor(ii/nSolidAngles*100))
+        gPlus = 1/2*(g1s(ii) + g2s(ii));
+        gMinus = 1/2*(g1s(ii) - g2s(ii));
 
-        for ihfi = 1:nHfiLine
+        w0s = gvalue2freq(fieldAxis, gPlus);
+        deltaws = gvalue2freq(fieldAxis, gMinus);
+        
+        % Variables that are scalars at the given iSolidAngle
+        Apl = Apls(ii);
+        Amin = Amins(ii);
+        dipolar = dipolars(ii);
+        for ihfi = 1:nHfiLines
+            % Variables that are scalars at the given ihfi
+            quantNumNuc = quantNumNucs(ihfi);
+            pasc = pascs(ihfi);
+
             % In the for loop, the variables that change are called with
             % the convention "om" instead of "w"
-            om0 = w0 + quantNumNuc(ihfi)*APlus(ii);
-            deltaom = deltaw + quantNumNuc(ihfi)*AMinus(ii);
-            omReson = myeigenenergies(om0, deltaom, JJ, dd(ii));
-            intensityReson = intensityresonance(rhoInit, rVers(:, ii), ...
-                    deltaom, JJ, dd(ii));
+            om0s = w0s + quantNumNuc*Apl;
+            deltaoms = deltaws + quantNumNuc*Amin;  % (1, nField)
+            omResons = myeigenenergies(om0s, deltaoms, JJ, dipolar); % (1, nField, 4)
+            intensityResons = intensityresonance(rhoInit, rVers(:, ii), ...
+                    deltaoms, JJ, dipolar);
             for itrans = 1:4
-                % Calculate new resonance transition
+                %% Calculate new resonance transition
                 newSig = gaussianresonancebsweep( ...
-                    omReson(itrans, :)*1e-3, mwFreq, ...
-                    mt2mhz(lwpp)*1e-3, "lwpp");
+                    omResons(:, :, itrans)*1e-3, mwFreq, ...
+                    resonLwpp, "lwpp");  % (1, nField)
                 % Multiply by scaling factors
-                newSig = intensityReson(itrans, :)'.*newSig'*pascalFactor(ihfi);
+                newSig = intensityResons(:, :, itrans).*newSig*pasc;
                 % Sum to previous signal
-                signal(:, ii, itrans) = signal(:, ii, itrans) + newSig;
-                % signal(:, ii) = signal(:, ii) + ...
-                %     intensityReson'.*signal__'*pascalFactor(ihfi);
-    
+                signal(ii, :, itrans) = signal(ii, :, itrans) + newSig;    
             end
         end 
     end
@@ -116,84 +124,113 @@ end
 %% SIGNALTREPRGINHBROADENING
 function signal = signaltreprginhbroadening(Sys, Exp)
     
-    N_RAND_POINTS = 2000;
-    g1 = Sys.g1;
-    g2 = Sys.g2;
-    nNuc = Sys.nNuc;
-    nHfiLine = nNuc + 1;
-    APlus = Sys.APlus;
-    AMinus = Sys.AMinus;
-    dd = Sys.dd;
+    gInhBroadening = Exp.gInhBroadening;
+    if gInhBroadening
+        N_GINH = 100;
+        lw1 = mt2mhz(Sys.lw1);
+        lw2 = mt2mhz(Sys.lw2);
+        glw1 = freq2gvalue(mean(Exp.x), lw1);
+        glw2 = freq2gvalue(mean(Exp.x), lw2);
+        resonLwpp = mt2mhz(Sys.trlwpp)*1e-3;
+        rng(0, "twister")  % Set random seed to 0 for reproducibility
+    else
+        resonLwpp = mt2mhz(Sys.lwpp)*1e-3;
+        N_GINH = 1;
+        glw1 = 0;
+        glw2 = 0;
+    end
+    g1s = Sys.g1s;
+    g2s = Sys.g2s;
+    nNucs = Sys.nNucs;
+    nHfiLines = nNucs + 1;
+    Apls = Sys.Apls;
+    Amins = Sys.Amins;
+    dipolars = Sys.dipolars;
+    zD = Sys.zD;
     JJ = Sys.J;
-    trlwpp = Sys.trlwpp;
     rhoInit = Sys.rho;
-    lw1 = mt2mhz(Sys.lw1);
-    lw2 = mt2mhz(Sys.lw2);
-    glw1 = freq2gvalue(mean(Exp.x), lw1);
-    glw2 = freq2gvalue(mean(Exp.x), lw2);
-
+    
     fieldAxis = Exp.x;
-    nField = Exp.nPoints;
-    nSolidAngle = Exp.nSolidAngle;
+    nFields = Exp.nPoints;
+    nSolidAngles = Exp.nSolidAngles;
     rVers = Exp.rVers;
     mwFreq = Exp.mwFreq;
 
-    quantNumNuc = -nNuc/2:1:nNuc/2;
-    % Determine Pascal factor of hfi lines
-    if nNuc > 0
-        pascalMatrix = pascal(nHfiLine);
+    quantNumNucs = -nNucs/2:1:nNucs/2;
+    %% Determine Pascal factor of hfi lines
+    if nNucs > 0
+        pascalMatrix = pascal(nHfiLines);
         % Antidiag
-        pascalFactor = pascalMatrix(nHfiLine:nHfiLine - 1:end - 1);
-        pascalFactor = pascalFactor'/sum(pascalFactor);
+        pascs = pascalMatrix(nHfiLines:nHfiLines - 1:end - 1);
+        pascs = pascs'/sum(pascs);
     else
-        pascalFactor = 1;
+        pascs = 1;
     end
-    
-    % Set random seed to 0 for reproducibility
-    rng(0, "twister")
 
-    signal = zeros(nField, nSolidAngle, 4);
+    %% Spectrum
+    signal = zeros(nSolidAngles, nFields, 4);
     ts = datetime("now", 'Format', 'HH:mm:ss');
     fprintf("%s: Start parfor: ", ts)
-    parfor ii = 1:nSolidAngle
-        % fprintf("%i, ", floor(ii/nSolidAngle*100))
-        % Generate numbers in a gaussian distribution centered at g1 and g2
-        g1rand = normrnd(g1(ii), glw1, [N_RAND_POINTS, 1]);
-        g2rand = normrnd(g2(ii), glw2, [N_RAND_POINTS, 1]);
-        gPlus = 1/2*(g1rand + g2rand);
-        gMinus = 1/2*(g1rand - g2rand);
-        % gPlus = gPlus(:);
-        % gMinus = gMinus(:);
+    for ii = 1:nSolidAngles
+        % The general convention of dimensions for matrices: the indeces are
+        % (igInh, iField, itrans) (except for signal)
+        if gInhBroadening
+            % Get numbers from gaussian distribution centered at g1 and g2
+            g1rand = normrnd(g1s(ii), glw1, [N_GINH, 1]);
+            g2rand = normrnd(g2s(ii), glw2, [N_GINH, 1]);
+            gpls = 1/2*(g1rand + g2rand);   % (N_GINH, 1)
+            gmins = 1/2*(g1rand - g2rand);  % (N_GINH, 1)
+        else
+            gpls = 1/2*(g1s(ii) + g2s(ii));
+            gmins = 1/2*(g1s(ii) - g2s(ii));
+        end
+        
+        w0s = gvalue2freq(fieldAxis, gpls);  % (N_GINH, nField) 
+        deltaws = gvalue2freq(fieldAxis, gmins); % (N_GINH, nField)
 
-        w0 = gvalue2freq(fieldAxis, gPlus);
-        deltaw = gvalue2freq(fieldAxis, gMinus);
+        % Variables that are scalars at the given iSolidAngle
+        Apl = Apls(ii);
+        Amin = Amins(ii);
+        dipolar = dipolars(ii);
 
-        for ihfi = 1:nHfiLine
+        %%
+        for ihfi = 1:nHfiLines
+            % Variables that are scalars at the given ihfi
+            quantNumNuc = quantNumNucs(ihfi);
+            pasc = pascs(ihfi);
+            
             % In the for loop, the variables that change are called with
             % the convention "om" instead of "w"
-            om0 = w0 + quantNumNuc(ihfi)*APlus(ii);
-            deltaom = deltaw + quantNumNuc(ihfi)*AMinus(ii);
-            om0Resh = reshape(om0, [1, size(om0)]);
-            deltaomResh = reshape(deltaom, [1, size(deltaom)]);
-            omReson = myeigenenergies(om0Resh, deltaomResh, JJ, dd(ii));
-            intensityReson = intensityresonance(rhoInit, rVers(:, ii), ...
-                    deltaom, JJ, dd(ii));
+            om0s = w0s + quantNumNuc*Apl;
+            deltaoms = deltaws + quantNumNuc*Amin;
+            omResons = myeigenenergies(om0s, deltaoms, JJ, dipolar);
+            intensityResons = intensityresonance(rhoInit, rVers(:, ii), ...
+                    deltaoms, JJ, dipolar, zD);
+
             for itrans = 1:4
-                % Calculate new resonance transition
+                %% Calculate new resonance transition
                 newSig = gaussianresonancebsweep( ...
-                    omReson(itrans, :, :)*1e-3, mwFreq, ...
-                    mt2mhz(trlwpp)*1e-3, "lwpp");
-                newSig = squeeze(newSig);
+                    omResons(:, :, itrans)*1e-3, mwFreq, ...
+                    resonLwpp, "lwpp");
 
                 % Multiply by scaling factors
-                newSig = squeeze(intensityReson(itrans, :, :))'.*newSig'*pascalFactor(ihfi);
-                newSig = sum(newSig, 2);
+                newSig = squeeze(intensityResons(:, :, itrans)).*newSig*pasc;
+                % Sum all (eventual) gInh contributions
+                newSig = sum(newSig, 1);
+
                 % Sum to previous signal
-                signal(:, ii, itrans) = signal(:, ii, itrans) + newSig;
-                % signal(:, ii) = signal(:, ii) + ...
-                %     intensityReson'.*signal__'*pascalFactor(ihfi);
-    
+                signal(ii, :, itrans) = signal(ii, :, itrans) + newSig;    
             end
+            % fprintf("%f\n", sum(signal(ii, :, :), "all"));
+            % figure(2)
+            % clf
+            % plot(1:301, sum(signal(ii, :, :), 3))
+            % hold on
+            % plot(1:301, signal(ii, :, 1), '--')
+            % plot(1:301, signal(ii, :, 2), '--')
+            % plot(1:301, signal(ii, :, 3), '--')
+            % plot(1:301, signal(ii, :, 4), '--')
+
         end 
     end
 end

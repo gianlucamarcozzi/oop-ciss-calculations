@@ -5,7 +5,7 @@ gFrame = [-18.3 -119.3 -23; ...
                 0    0   0]*pi/180;
 eeFrame = [0 -71.6 -68.5]*pi/180;  % zD direction is along -x of A1-
 
-nNuc = 0;
+nNucs = 0;
 Nucs = '1H';
 A = [0, 0, 0, 9, 9.4, 12.8];
 AFrame = [0 0 0 60 -90 0]*pi/180;
@@ -13,8 +13,11 @@ AFrame = [0 0 0 60 -90 0]*pi/180;
 J = mt2mhz(0.00);  % MHz
 dip = -mt2mhz(0.124); % MHz
 
-lwpp = 0.33;  % mT
-initState = 'du';
+lwpp = 0.315;  % mT
+% lwpp = 0.2;  % mT
+% initState = 'ud';
+chi = 0;
+% chi = 31.7883;  % deg, not rad
 
 lw1 = 0.15;
 lw2 = 0.15;
@@ -25,6 +28,6 @@ CenterSweep = [342, 4]; % mT
 nPoints = 301;
 Harmonic = 0;
 
-nTheta = 20;
-nPhi = 10;
+nThetas = 40;
+nPhis = 20;
 

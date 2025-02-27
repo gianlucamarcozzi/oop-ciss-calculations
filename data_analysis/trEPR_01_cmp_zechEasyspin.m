@@ -8,16 +8,19 @@ addpath("../util/")
 [Sys, Exp] = importparam("trEPR_01_01_param.txt");
 
 % Zech (constant delta theta)
+% Note that if I use this method then the average over the solid angle is
+% just a sum of all the contributions, no weighting with sin(theta).
+% Also note: no aa/max(abs(aa)) needed here! They are just exactly the same
 Exp.gridType = "zech";
 [testz, thz] = mytrepr(Sys, Exp);
-aaz = sum(testz, 2)/sum(sin(repmat(thz, [Exp.nPhi, 1])), 'all');
+aaz = sum(testz, 1)/sum(sin(repmat(thz, [Exp.nPhis, 1])), 'all');
 aaz = squeeze(aaz);
 aaz = sum(aaz, 2);
 
 % My way (constant theta)
 Exp.gridType = "other";
 [test, th] = mytrepr(Sys, Exp);
-aaa = averageoversolidangle(test, th, Exp.nPhi, 2);
+aaa = averageoversolidangle(test, th, Exp.nPhis, 1);
 aaa = sum(aaa, 2);
 
 % PLOT

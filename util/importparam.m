@@ -20,17 +20,22 @@ end
 
 M = readlines(pathToParam);
 
-sysPar = ["S", "g", "gFrame", "eeFrame", "A", "AFrame", "Nucs", "nNuc", ...
-    "J", "dip", "lwpp", "initState", "lw1", "lw2", "trlwpp"];
+sysPar = ["S", "g", "gFrame", "eeFrame", "A", "AFrame", "Nucs", "nNucs", ...
+    "J", "dip", "lwpp", "initState", "chi", "lw1", "lw2", "trlwpp"];
 expPar = ["x", "mwFreq", "CenterSweep", "Range", "nPoints", "Harmonic", ...
-    "nTheta", "nPhi"];
+    "nThetas", "nPhis"];
 
 Sys = struct();
 Exp = struct();
+M = deletecomments(M);
+M = attachlineswithdots(M);
+
 for ii = 1:numel(M)
-    m = M(ii);  % Current line
-    % Get parName from the file row
-    temp = strsplit(M{ii}, '=');
+    % Get parName
+    temp = strsplit(M(ii), '=');
+    if isscalar(temp)  % no '=' in this line
+        continue    
+    end
     parName = strrep(temp(1), ' ', '');
     % Compare with expected parameters
     [sysFlag, iSys] = ismember(parName, sysPar);
@@ -39,33 +44,49 @@ for ii = 1:numel(M)
         par = sysPar(iSys);
     elseif expFlag
         par = expPar(iExp);
-    elseif isscalar(temp)  % no '=' in this line
-        continue
     else
-        disp(parName)
         error("Parameter %s not found in the list " + ...
             "of expected parameters.\n", parName{:})
     end
-    zz = ii;
-    while contains(M{zz}, '...')
-        m(end + 1) = M(zz + 1);
-        zz = zz + 1;
-    end
-    % fprintf("par = %s:\n\t", par)
-    % disp(m)
+    
     if sysFlag
-        Sys = addpar(Sys, m, par);
+        Sys = addpar(Sys, M(ii), par);
     else
-        Exp = addpar(Exp, m, par);
+        Exp = addpar(Exp, M(ii), par);
     end
 
 end
-Sys = getrhofrominitstate(Sys);
+Sys = getrhofromparamfile(Sys);
 Exp = getxfromrange(Exp);
 end
 
+function M = deletecomments(M)
+    for ii = 1:numel(M)
+        temp = strsplit(M(ii), "%");
+        M(ii) = temp(1);
+    end
+end
+
+function M = attachlineswithdots(M)
+    for ii = numel(M):-1:1
+        if contains(M{ii}, '...')
+            if ii == numel(M)
+                error("The last line of the parameter file contains " + ...
+                    "'...'. Import failed.")
+            end
+            % Remove dots
+            temp = strsplit(M{ii}, '...');
+            part1 = temp(1);
+            % Append the rows
+            M(ii) = append(part1, M(ii + 1));
+            % Clean the row that was appended
+            M(ii + 1) = "";
+        end
+    end
+end
+
 function Sys = addpar(Sys, m, par)
-% par should be a string vector
+    % par should be a string vector
     temp = strsplit(m{1}, '=');
     m(1) = temp(end);
     for ii = 1:numel(m)
@@ -79,36 +100,6 @@ function Sys = addpar(Sys, m, par)
         tfin = append(tfin, tt{ii});
     end
     Sys.(par) = eval(tfin);
-end
-
-function Sys = getrhofrominitstate(Sys)
-    if ~isfield(Sys, 'initState')
-        warning("The initial density matrix is set to 'singlet'" + ...
-            " since no initState was declared in the parameters.")
-        initState = 'singlet';
-    else
-        initState = lower(Sys.initState);
-    end
-
-    Sys.rho = zeros(4, 4);
-    if strcmp(initState, 'singlet')
-        % Singlet
-        Sys.rho(2, 2) = 1;
-        Sys.rho(2, 3) = -1;
-        Sys.rho(3, 2) = -1;
-        Sys.rho(3, 3) = 1;
-        Sys.rho = 1/2*Sys.rho;
-    elseif strcmp(initState, 'ciss')
-        % Up-down and down-up
-        Sys.rho(2, 2) = 1;
-        Sys.rho(3, 3) = 1;
-        Sys.rho = 1/2*Sys.rho;
-    elseif strcmp(initState, 'ud')
-        Sys.rho(2, 2) = 1;
-    else
-        error("initState not implemented.")
-    end
-
 end
 
 function Exp = getxfromrange(Exp)
