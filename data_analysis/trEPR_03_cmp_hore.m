@@ -42,15 +42,14 @@ plot(hh.x*9.4945/9.6, hh.y, "DisplayName", "Hore NO CISS")
 % plot(Exp.x, aQ, "DisplayName", "aQ")
 legend()
 
-iimax = 0;
-for ii = round(linspace(1, 200, 200))
-    iimax = iimax + 1;
-    [~, imax1(iimax)] = max(abs(test(ii, :, 4)));
-end
+% iimax = 0;
+% for ii = round(linspace(1, 200, 200))
+%     iimax = iimax + 1;
+%     [~, imax1(iimax)] = max(abs(aout(ii, :, 4)));
+% end
 
 %%
 
-% Initial density matrix: singlet
 [Sys, Exp] = importparam("trEPR_03_01_param.txt");
 Xs = [0, 0.05, 0.1, 0.15];
 Xs = linspace(0, 1, 11);
@@ -65,6 +64,7 @@ for ii = 1:nSim
     aouts{ii} = mytrepr(Sys, Exp);
     toc
 end
+
 %%
 figure(2)
 clf
